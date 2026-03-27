@@ -5,15 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>사과 게임 - 랭킹 시간 표시</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK 추가 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables for Firebase
-        window.firebase = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, addDoc, getDocs, doc, setDoc };
-    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@900&display=swap');
 
@@ -207,6 +198,28 @@
             font-weight: 500;
         }
 
+        /* 메시지 박스 스타일 */
+        #message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 5000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+        #message-box.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(10px);
+        }
+
         @media (max-width: 800px) {
             .apple { width: 28px; height: 28px; }
             .apple-number { font-size: 14px; }
@@ -222,6 +235,8 @@
     </style>
 </head>
 <body>
+
+    <div id="message-box"></div>
 
     <!-- 1. 로그인 화면 -->
     <div id="login-screen" class="screen active mt-20">
@@ -284,13 +299,24 @@
     </div>
 
     <script type="module">
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, addDoc, getDocs } = window.firebase;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Setup with error handling
+        let app, auth, db;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-game-default';
         
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-game-001';
+        try {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            if (firebaseConfig) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
 
         // Game State
         const COLS = 17;
@@ -315,8 +341,10 @@
         const scoreDisplay = document.getElementById('score-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameWrapper = document.getElementById('game-wrapper');
+        const messageBox = document.getElementById('message-box');
 
         const initAuth = async () => {
+            if (!auth) return;
             try {
                 await signInAnonymously(auth);
                 onAuthStateChanged(auth, (u) => { user = u; });
@@ -325,6 +353,12 @@
             }
         };
         initAuth();
+
+        function showMessage(text) {
+            messageBox.innerText = text;
+            messageBox.classList.add('show');
+            setTimeout(() => messageBox.classList.remove('show'), 2000);
+        }
 
         function showScreen(screenId) {
             Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -401,7 +435,7 @@
             document.getElementById('final-score').innerText = score;
             document.getElementById('game-over').classList.remove('hidden');
             
-            if (user && playerName) {
+            if (db && user && playerName) {
                 document.getElementById('saving-msg').classList.remove('hidden');
                 try {
                     const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
@@ -412,7 +446,7 @@
                     });
                     document.getElementById('saving-msg').innerText = "기록 저장 완료!";
                 } catch (e) {
-                    document.getElementById('saving-msg').innerText = "기록 저장 실패";
+                    document.getElementById('saving-msg').innerText = "기록 저장 실패 (오프라인)";
                 }
             }
         }
@@ -435,7 +469,10 @@
             const listEl = document.getElementById('ranking-list');
             listEl.innerHTML = '<p class="text-center text-gray-400 py-10">데이터를 불러오는 중...</p>';
             
-            if (!user) return;
+            if (!db) {
+                listEl.innerHTML = '<p class="text-center text-red-400 py-10">데이터베이스가 연결되지 않았습니다.</p>';
+                return;
+            }
 
             try {
                 const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
@@ -467,10 +504,11 @@
             }
         }
 
+        // Events
         document.getElementById('start-game-btn').addEventListener('click', () => {
             const inputName = document.getElementById('player-name').value.trim();
             if (!inputName) {
-                alert("이름을 입력해주세요!");
+                showMessage("이름을 입력해주세요!");
                 return;
             }
             playerName = inputName;
