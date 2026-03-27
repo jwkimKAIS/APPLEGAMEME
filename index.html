@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사과 게임 - 랭킹 시간 표시</title>
+    <title>사과 게임 - 심플 에디션</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@900&display=swap');
@@ -173,53 +173,6 @@
             opacity: 0.5;
         }
 
-        .ranking-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            background: white;
-            margin-bottom: 8px;
-            border-radius: 16px;
-            width: 100%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            border: 1px solid #f0f0f0;
-        }
-
-        .ranking-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .ranking-time {
-            font-size: 10px;
-            color: #bdc3c7;
-            font-weight: 500;
-        }
-
-        /* 메시지 박스 스타일 */
-        #message-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 5000;
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            pointer-events: none;
-        }
-        #message-box.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(10px);
-        }
-
         @media (max-width: 800px) {
             .apple { width: 28px; height: 28px; }
             .apple-number { font-size: 14px; }
@@ -236,35 +189,19 @@
 </head>
 <body>
 
-    <div id="message-box"></div>
-
-    <!-- 1. 로그인 화면 -->
-    <div id="login-screen" class="screen active mt-20">
-        <div class="bg-white p-10 rounded-[40px] shadow-xl text-center w-full max-w-sm">
-            <div class="text-6xl mb-6">🍎</div>
-            <h1 class="text-3xl font-black text-gray-800 mb-2">APPLE GAME</h1>
-            <p class="text-gray-400 mb-8 font-bold">이름을 입력하고 시작하세요!</p>
-            <input type="text" id="player-name" placeholder="닉네임 입력" 
-                class="w-full bg-gray-100 border-none rounded-2xl p-4 text-center font-bold text-xl mb-6 focus:ring-2 focus:ring-red-300 outline-none">
-            <button id="start-game-btn" class="w-full btn-primary text-xl">게임 시작</button>
-            <button id="view-rank-btn" class="w-full mt-4 text-gray-400 font-bold hover:text-gray-600 transition-colors">랭킹 보기</button>
-        </div>
-    </div>
-
-    <!-- 2. 게임 화면 -->
-    <div id="game-screen" class="screen">
+    <!-- 게임 화면 (기본 활성화) -->
+    <div id="game-screen" class="screen active">
         <div id="header-box">
             <div class="flex flex-col items-center">
                 <span class="text-[10px] font-bold text-gray-300 uppercase">Score</span>
                 <span id="score-display" class="value">0</span>
             </div>
             <div class="text-center">
-                <span id="current-player-display" class="text-xs font-black text-gray-400 block mb-1">PLAYER</span>
+                <h1 class="text-sm font-black text-gray-400 tracking-tight">🍎 APPLE GAME</h1>
                 <p id="timer-display" class="text-xl font-mono font-bold text-gray-700">02:00</p>
             </div>
             <div class="flex gap-2">
                 <button id="restart-btn" class="bg-gray-100 text-gray-400 px-3 py-2 rounded-xl font-bold text-xs hover:bg-gray-200">RESET</button>
-                <button id="go-home-btn" class="bg-gray-800 text-white px-3 py-2 rounded-xl font-bold text-xs hover:bg-black transition-all">HOME</button>
             </div>
         </div>
 
@@ -274,50 +211,18 @@
         </div>
     </div>
 
-    <!-- 3. 랭킹 화면 -->
-    <div id="ranking-screen" class="screen mt-10">
-        <div class="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-md">
-            <h2 class="text-3xl font-black text-gray-800 mb-6 text-center">TOP RANKING</h2>
-            <div id="ranking-list" class="max-h-[400px] overflow-y-auto mb-6 px-2">
-                <p class="text-center text-gray-400 py-10">데이터를 불러오는 중...</p>
-            </div>
-            <button id="back-to-login-btn" class="w-full btn-primary">처음으로</button>
-        </div>
-    </div>
-
     <!-- 게임 오버 모달 -->
     <div id="game-over" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] hidden">
         <div class="bg-white p-10 rounded-[30px] text-center max-w-sm w-full mx-4 shadow-2xl border-4 border-gray-50">
             <h2 class="text-2xl font-black text-gray-800 uppercase">Time Up!</h2>
             <div class="text-6xl font-black text-red-300 my-6" id="final-score">0</div>
-            <p id="saving-msg" class="text-sm font-bold text-blue-400 mb-4 hidden">기록 저장 중...</p>
             <div class="flex flex-col gap-3">
                 <button id="modal-restart-btn" class="w-full btn-primary text-xl">다시 하기</button>
-                <button id="modal-rank-btn" class="w-full bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-xl hover:bg-gray-200 transition-all">랭킹 보기</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Firebase Setup with error handling
-        let app, auth, db;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-game-default';
-        
-        try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            if (firebaseConfig) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-            }
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-        }
-
+    <script>
         // Game State
         const COLS = 17;
         const ROWS = 10;
@@ -328,45 +233,12 @@
         let timerInterval = null;
         let apples = [];
         let isGameOver = false;
-        let playerName = "";
-        let user = null;
 
-        const screens = {
-            login: document.getElementById('login-screen'),
-            game: document.getElementById('game-screen'),
-            ranking: document.getElementById('ranking-screen')
-        };
         const container = document.getElementById('game-container');
         const selectionBox = document.getElementById('selection-box');
         const scoreDisplay = document.getElementById('score-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameWrapper = document.getElementById('game-wrapper');
-        const messageBox = document.getElementById('message-box');
-
-        const initAuth = async () => {
-            if (!auth) return;
-            try {
-                await signInAnonymously(auth);
-                onAuthStateChanged(auth, (u) => { user = u; });
-            } catch (e) {
-                console.error("Auth failed", e);
-            }
-        };
-        initAuth();
-
-        function showMessage(text) {
-            messageBox.innerText = text;
-            messageBox.classList.add('show');
-            setTimeout(() => messageBox.classList.remove('show'), 2000);
-        }
-
-        function showScreen(screenId) {
-            Object.values(screens).forEach(s => s.classList.remove('active'));
-            screens[screenId].classList.add('active');
-            if(screenId !== 'game') {
-                clearInterval(timerInterval);
-            }
-        }
 
         function initGame() {
             clearInterval(timerInterval);
@@ -378,8 +250,6 @@
             scoreDisplay.innerText = '0';
             updateTimer();
             document.getElementById('game-over').classList.add('hidden');
-            document.getElementById('saving-msg').classList.add('hidden');
-            document.getElementById('current-player-display').innerText = playerName;
 
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
@@ -399,7 +269,6 @@
             }
             setTimeout(cacheApplePositions, 300); 
             startTimer();
-            showScreen('game');
         }
 
         function cacheApplePositions() {
@@ -429,101 +298,20 @@
             timerDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        async function endGame() {
+        function endGame() {
             clearInterval(timerInterval);
             isGameOver = true;
             document.getElementById('final-score').innerText = score;
             document.getElementById('game-over').classList.remove('hidden');
-            
-            if (db && user && playerName) {
-                document.getElementById('saving-msg').classList.remove('hidden');
-                try {
-                    const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
-                    await addDoc(rankingsRef, {
-                        name: playerName,
-                        score: score,
-                        timestamp: Date.now()
-                    });
-                    document.getElementById('saving-msg').innerText = "기록 저장 완료!";
-                } catch (e) {
-                    document.getElementById('saving-msg').innerText = "기록 저장 실패 (오프라인)";
-                }
-            }
         }
 
-        function formatDateTime(timestamp) {
-            if (!timestamp) return "";
-            const date = new Date(timestamp);
-            return date.toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-
-        async function loadRankings() {
-            showScreen('ranking');
-            const listEl = document.getElementById('ranking-list');
-            listEl.innerHTML = '<p class="text-center text-gray-400 py-10">데이터를 불러오는 중...</p>';
-            
-            if (!db) {
-                listEl.innerHTML = '<p class="text-center text-red-400 py-10">데이터베이스가 연결되지 않았습니다.</p>';
-                return;
-            }
-
-            try {
-                const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
-                const querySnapshot = await getDocs(rankingsRef);
-                const rawData = [];
-                querySnapshot.forEach((doc) => rawData.push(doc.data()));
-                
-                const sortedData = rawData.sort((a, b) => b.score - a.score).slice(0, 50);
-                
-                if (sortedData.length === 0) {
-                    listEl.innerHTML = '<p class="text-center text-gray-400 py-10">등록된 랭킹이 없습니다.</p>';
-                    return;
-                }
-
-                listEl.innerHTML = sortedData.map((item, index) => `
-                    <div class="ranking-item">
-                        <div class="flex items-center gap-4">
-                            <span class="font-black text-gray-300 text-lg w-6">${index + 1}</span>
-                            <div class="ranking-info">
-                                <span class="font-bold text-gray-700">${item.name}</span>
-                                <span class="ranking-time">${formatDateTime(item.timestamp)}</span>
-                            </div>
-                        </div>
-                        <span class="font-black text-red-400 text-xl">${item.score}점</span>
-                    </div>
-                `).join('');
-            } catch (e) {
-                listEl.innerHTML = '<p class="text-center text-red-400 py-10">데이터를 불러오지 못했습니다.</p>';
-            }
-        }
-
-        // Events
-        document.getElementById('start-game-btn').addEventListener('click', () => {
-            const inputName = document.getElementById('player-name').value.trim();
-            if (!inputName) {
-                showMessage("이름을 입력해주세요!");
-                return;
-            }
-            playerName = inputName;
-            initGame();
-        });
-
-        document.getElementById('view-rank-btn').addEventListener('click', loadRankings);
-        document.getElementById('modal-rank-btn').addEventListener('click', loadRankings);
-        document.getElementById('back-to-login-btn').addEventListener('click', () => showScreen('login'));
+        // 버튼 리스너
         document.getElementById('restart-btn').addEventListener('click', initGame);
         document.getElementById('modal-restart-btn').addEventListener('click', initGame);
-        document.getElementById('go-home-btn').addEventListener('click', () => showScreen('login'));
 
+        // 드래그 조작 로직
         function handleStart(e) {
-            if (isGameOver || !screens.game.classList.contains('active')) return;
+            if (isGameOver) return;
             isDragging = true;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -604,6 +392,9 @@
         window.addEventListener('touchmove', handleMove);
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('resize', cacheApplePositions);
+
+        // 페이지 로드 시 즉시 실행
+        window.onload = initGame;
     </script>
 </body>
 </html>
