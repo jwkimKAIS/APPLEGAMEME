@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사과 게임 - 편안한 색감 버전</title>
+    <title>사과 게임 - 랭킹 시간 표시</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK 추가 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase
+        window.firebase = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, addDoc, getDocs, doc, setDoc };
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@900&display=swap');
 
         :root {
-            /* 눈이 편안한 파스텔톤 색상으로 변경 */
-            --apple-red: #ff8a8a;      /* 부드러운 파스텔 레드 */
-            --apple-dark: #ef5350;     /* 조금 더 진한 레드 (그림자용) */
-            --selected-yellow: #fff176; /* 부드러운 파스텔 옐로우 */
-            --bg-green: #f1f8e9;       /* 더 연하고 편안한 배경 그린 */
-            --board-border: #c5e1a5;   /* 보드 테두리 색상 */
+            --apple-red: #ff8a8a;      
+            --apple-dark: #ef5350;     
+            --selected-yellow: #fff176; 
+            --bg-green: #f1f8e9;       
         }
 
         body {
             touch-action: none;
             user-select: none;
-            background-color: #f7f9fc; /* 배경을 좀 더 밝고 깨끗한 톤으로 */
+            background-color: #f7f9fc; 
             font-family: 'Pretendard', sans-serif;
             display: flex;
             flex-direction: column;
@@ -30,9 +37,35 @@
             padding: 10px;
         }
 
-        #header-box {
+        .screen {
+            display: none;
             width: 100%;
             max-width: 850px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .btn-primary {
+            background-color: var(--apple-dark);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            font-weight: 900;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #c62828;
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #c62828;
+        }
+
+        #header-box {
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -43,19 +76,6 @@
             margin-bottom: 15px;
         }
 
-        .info-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #bdc3c7;
-            text-transform: uppercase;
-        }
-
         .value {
             font-size: 24px;
             font-weight: 900;
@@ -63,7 +83,6 @@
             line-height: 1;
         }
 
-        /* 게임 보드: 격자 무늬 배경 */
         #game-wrapper {
             position: relative;
             background-color: var(--bg-green);
@@ -92,47 +111,42 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
         }
 
         .apple-inner {
             width: 100%;
             height: 100%;
             background-color: var(--apple-red);
-            border-radius: 50% 50% 48% 48%; /* 약간 더 둥글게 조정 */
+            border-radius: 50% 50% 48% 48%; 
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             box-shadow: 0 2px 0 var(--apple-dark);
-            transition: transform 0.1s ease, background-color 0.2s ease;
+            transition: transform 0.1s ease;
         }
 
-        /* 사과 꼭지 */
         .apple-inner::before {
             content: '';
             position: absolute;
             top: -4px;
             width: 2px;
             height: 6px;
-            background: #8d6e63; /* 꼭지 색상도 조금 더 부드럽게 */
+            background: #8d6e63; 
             border-radius: 1px;
             left: 50%;
             transform: translateX(-50%);
         }
 
         .apple-number {
-            color: white;
+            color: white; 
             font-size: 16px;
             font-weight: 900;
             z-index: 2;
             pointer-events: none;
-            line-height: 1;
-            /* 텍스트 그림자를 연하게 하여 가독성 유지 */
             text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
         }
 
-        /* 선택 시 효과 */
         .apple.selected .apple-inner {
             background-color: var(--selected-yellow);
             box-shadow: 0 2px 0 #fbc02d;
@@ -140,7 +154,7 @@
         }
 
         .apple.selected .apple-number {
-            color: #5d4037; /* 선택 시 숫자를 진한 갈색으로 변경하여 눈 보호 */
+            color: #5d4037; 
             text-shadow: none;
         }
 
@@ -151,7 +165,7 @@
 
         #selection-box {
             position: absolute;
-            border: 2px solid #81d4fa; /* 선택 박스 색상도 연하게 */
+            border: 2px solid #81d4fa; 
             background-color: rgba(129, 212, 250, 0.2);
             pointer-events: none;
             display: none;
@@ -163,17 +177,40 @@
             position: fixed;
             z-index: 500;
             pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.5s ease-in;
             transform: scale(0.2);
             opacity: 0.5;
         }
 
-        /* 반응형 */
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 16px;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            border: 1px solid #f0f0f0;
+        }
+
+        .ranking-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ranking-time {
+            font-size: 10px;
+            color: #bdc3c7;
+            font-weight: 500;
+        }
+
         @media (max-width: 800px) {
             .apple { width: 28px; height: 28px; }
             .apple-number { font-size: 14px; }
             #game-container { gap: 6px; }
-            #game-wrapper { padding: 15px; }
         }
 
         @media (max-width: 600px) {
@@ -186,38 +223,76 @@
 </head>
 <body>
 
-    <div id="header-box">
-        <div class="info-group">
-            <span class="label">Score</span>
-            <span id="score-display" class="value">0</span>
+    <!-- 1. 로그인 화면 -->
+    <div id="login-screen" class="screen active mt-20">
+        <div class="bg-white p-10 rounded-[40px] shadow-xl text-center w-full max-w-sm">
+            <div class="text-6xl mb-6">🍎</div>
+            <h1 class="text-3xl font-black text-gray-800 mb-2">APPLE GAME</h1>
+            <p class="text-gray-400 mb-8 font-bold">이름을 입력하고 시작하세요!</p>
+            <input type="text" id="player-name" placeholder="닉네임 입력" 
+                class="w-full bg-gray-100 border-none rounded-2xl p-4 text-center font-bold text-xl mb-6 focus:ring-2 focus:ring-red-300 outline-none">
+            <button id="start-game-btn" class="w-full btn-primary text-xl">게임 시작</button>
+            <button id="view-rank-btn" class="w-full mt-4 text-gray-400 font-bold hover:text-gray-600 transition-colors">랭킹 보기</button>
         </div>
-        <div class="text-center">
-            <h1 class="text-base font-black text-gray-600 tracking-tight">🍎 APPLE GAME</h1>
-            <p id="timer-display" class="text-sm font-mono font-bold text-gray-400">02:00</p>
-        </div>
-        <button id="restart-btn" class="bg-gray-100 text-gray-500 px-5 py-2 rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-95 text-xs">
-            RESET
-        </button>
     </div>
 
-    <div id="game-wrapper">
-        <div id="game-container">
-            <!-- JS 생성 -->
+    <!-- 2. 게임 화면 -->
+    <div id="game-screen" class="screen">
+        <div id="header-box">
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] font-bold text-gray-300 uppercase">Score</span>
+                <span id="score-display" class="value">0</span>
+            </div>
+            <div class="text-center">
+                <span id="current-player-display" class="text-xs font-black text-gray-400 block mb-1">PLAYER</span>
+                <p id="timer-display" class="text-xl font-mono font-bold text-gray-700">02:00</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="restart-btn" class="bg-gray-100 text-gray-400 px-3 py-2 rounded-xl font-bold text-xs hover:bg-gray-200">RESET</button>
+                <button id="go-home-btn" class="bg-gray-800 text-white px-3 py-2 rounded-xl font-bold text-xs hover:bg-black transition-all">HOME</button>
+            </div>
         </div>
-        <div id="selection-box"></div>
+
+        <div id="game-wrapper">
+            <div id="game-container"></div>
+            <div id="selection-box"></div>
+        </div>
     </div>
 
+    <!-- 3. 랭킹 화면 -->
+    <div id="ranking-screen" class="screen mt-10">
+        <div class="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-md">
+            <h2 class="text-3xl font-black text-gray-800 mb-6 text-center">TOP RANKING</h2>
+            <div id="ranking-list" class="max-h-[400px] overflow-y-auto mb-6 px-2">
+                <p class="text-center text-gray-400 py-10">데이터를 불러오는 중...</p>
+            </div>
+            <button id="back-to-login-btn" class="w-full btn-primary">처음으로</button>
+        </div>
+    </div>
+
+    <!-- 게임 오버 모달 -->
     <div id="game-over" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] hidden">
         <div class="bg-white p-10 rounded-[30px] text-center max-w-sm w-full mx-4 shadow-2xl border-4 border-gray-50">
             <h2 class="text-2xl font-black text-gray-800 uppercase">Time Up!</h2>
             <div class="text-6xl font-black text-red-300 my-6" id="final-score">0</div>
-            <button id="modal-restart-btn" class="w-full bg-red-400 text-white py-4 rounded-2xl font-black text-xl hover:bg-red-500 transition-all shadow-lg">
-                REPLAY
-            </button>
+            <p id="saving-msg" class="text-sm font-bold text-blue-400 mb-4 hidden">기록 저장 중...</p>
+            <div class="flex flex-col gap-3">
+                <button id="modal-restart-btn" class="w-full btn-primary text-xl">다시 하기</button>
+                <button id="modal-rank-btn" class="w-full bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-xl hover:bg-gray-200 transition-all">랭킹 보기</button>
+            </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, addDoc, getDocs } = window.firebase;
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-game-001';
+
+        // Game State
         const COLS = 17;
         const ROWS = 10;
         let score = 0;
@@ -227,12 +302,37 @@
         let timerInterval = null;
         let apples = [];
         let isGameOver = false;
+        let playerName = "";
+        let user = null;
 
+        const screens = {
+            login: document.getElementById('login-screen'),
+            game: document.getElementById('game-screen'),
+            ranking: document.getElementById('ranking-screen')
+        };
         const container = document.getElementById('game-container');
         const selectionBox = document.getElementById('selection-box');
         const scoreDisplay = document.getElementById('score-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameWrapper = document.getElementById('game-wrapper');
+
+        const initAuth = async () => {
+            try {
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (u) => { user = u; });
+            } catch (e) {
+                console.error("Auth failed", e);
+            }
+        };
+        initAuth();
+
+        function showScreen(screenId) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenId].classList.add('active');
+            if(screenId !== 'game') {
+                clearInterval(timerInterval);
+            }
+        }
 
         function initGame() {
             clearInterval(timerInterval);
@@ -244,29 +344,28 @@
             scoreDisplay.innerText = '0';
             updateTimer();
             document.getElementById('game-over').classList.add('hidden');
+            document.getElementById('saving-msg').classList.add('hidden');
+            document.getElementById('current-player-display').innerText = playerName;
 
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     const val = Math.floor(Math.random() * 9) + 1;
                     const appleEl = document.createElement('div');
                     appleEl.className = 'apple';
-                    
                     const inner = document.createElement('div');
                     inner.className = 'apple-inner';
-                    
                     const num = document.createElement('span');
                     num.className = 'apple-number';
                     num.innerText = val;
-                    
                     inner.appendChild(num);
                     appleEl.appendChild(inner);
                     container.appendChild(appleEl);
                     apples.push({ el: appleEl, value: val, removed: false, rect: null });
                 }
             }
-            
             setTimeout(cacheApplePositions, 300); 
             startTimer();
+            showScreen('game');
         }
 
         function cacheApplePositions() {
@@ -296,21 +395,102 @@
             timerDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        function endGame() {
+        async function endGame() {
             clearInterval(timerInterval);
             isGameOver = true;
             document.getElementById('final-score').innerText = score;
             document.getElementById('game-over').classList.remove('hidden');
+            
+            if (user && playerName) {
+                document.getElementById('saving-msg').classList.remove('hidden');
+                try {
+                    const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
+                    await addDoc(rankingsRef, {
+                        name: playerName,
+                        score: score,
+                        timestamp: Date.now()
+                    });
+                    document.getElementById('saving-msg').innerText = "기록 저장 완료!";
+                } catch (e) {
+                    document.getElementById('saving-msg').innerText = "기록 저장 실패";
+                }
+            }
         }
 
+        function formatDateTime(timestamp) {
+            if (!timestamp) return "";
+            const date = new Date(timestamp);
+            return date.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        async function loadRankings() {
+            showScreen('ranking');
+            const listEl = document.getElementById('ranking-list');
+            listEl.innerHTML = '<p class="text-center text-gray-400 py-10">데이터를 불러오는 중...</p>';
+            
+            if (!user) return;
+
+            try {
+                const rankingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
+                const querySnapshot = await getDocs(rankingsRef);
+                const rawData = [];
+                querySnapshot.forEach((doc) => rawData.push(doc.data()));
+                
+                const sortedData = rawData.sort((a, b) => b.score - a.score).slice(0, 50);
+                
+                if (sortedData.length === 0) {
+                    listEl.innerHTML = '<p class="text-center text-gray-400 py-10">등록된 랭킹이 없습니다.</p>';
+                    return;
+                }
+
+                listEl.innerHTML = sortedData.map((item, index) => `
+                    <div class="ranking-item">
+                        <div class="flex items-center gap-4">
+                            <span class="font-black text-gray-300 text-lg w-6">${index + 1}</span>
+                            <div class="ranking-info">
+                                <span class="font-bold text-gray-700">${item.name}</span>
+                                <span class="ranking-time">${formatDateTime(item.timestamp)}</span>
+                            </div>
+                        </div>
+                        <span class="font-black text-red-400 text-xl">${item.score}점</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                listEl.innerHTML = '<p class="text-center text-red-400 py-10">데이터를 불러오지 못했습니다.</p>';
+            }
+        }
+
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            const inputName = document.getElementById('player-name').value.trim();
+            if (!inputName) {
+                alert("이름을 입력해주세요!");
+                return;
+            }
+            playerName = inputName;
+            initGame();
+        });
+
+        document.getElementById('view-rank-btn').addEventListener('click', loadRankings);
+        document.getElementById('modal-rank-btn').addEventListener('click', loadRankings);
+        document.getElementById('back-to-login-btn').addEventListener('click', () => showScreen('login'));
+        document.getElementById('restart-btn').addEventListener('click', initGame);
+        document.getElementById('modal-restart-btn').addEventListener('click', initGame);
+        document.getElementById('go-home-btn').addEventListener('click', () => showScreen('login'));
+
         function handleStart(e) {
-            if (isGameOver) return;
+            if (isGameOver || !screens.game.classList.contains('active')) return;
             isDragging = true;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const rect = gameWrapper.getBoundingClientRect();
             startPos = { x: clientX - rect.left, y: clientY - rect.top };
-            
             selectionBox.style.display = 'block';
             selectionBox.style.width = '0px';
             selectionBox.style.height = '0px';
@@ -323,20 +503,16 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const rect = gameWrapper.getBoundingClientRect();
-            
             const curX = Math.max(0, Math.min(rect.width, clientX - rect.left));
             const curY = Math.max(0, Math.min(rect.height, clientY - rect.top));
-
             const l = Math.min(startPos.x, curX);
             const t = Math.min(startPos.y, curY);
             const w = Math.abs(startPos.x - curX);
             const h = Math.abs(startPos.y - curY);
-
             selectionBox.style.left = l + 'px';
             selectionBox.style.top = t + 'px';
             selectionBox.style.width = w + 'px';
             selectionBox.style.height = h + 'px';
-
             const box = { left: l, top: t, right: l + w, bottom: t + h };
             apples.forEach(apple => {
                 if (apple.removed || !apple.rect) return;
@@ -349,10 +525,8 @@
             if (!isDragging || isGameOver) return;
             isDragging = false;
             selectionBox.style.display = 'none';
-            
             const selected = apples.filter(a => !a.removed && a.el.classList.contains('selected'));
             if (selected.length === 0) return;
-
             const sum = selected.reduce((acc, curr) => acc + curr.value, 0);
             if (sum === 10) {
                 const targetRect = scoreDisplay.getBoundingClientRect();
@@ -365,13 +539,11 @@
                     clone.style.width = rect.width + 'px';
                     clone.style.height = rect.height + 'px';
                     document.body.appendChild(clone);
-
                     requestAnimationFrame(() => {
                         clone.style.left = targetRect.left + 'px';
                         clone.style.top = targetRect.top + 'px';
                     });
                     setTimeout(() => clone.remove(), 500);
-
                     apple.removed = true;
                     apple.el.classList.add('removed');
                 });
@@ -393,12 +565,7 @@
         }, { passive: false });
         window.addEventListener('touchmove', handleMove);
         window.addEventListener('touchend', handleEnd);
-        
-        document.getElementById('restart-btn').addEventListener('click', initGame);
-        document.getElementById('modal-restart-btn').addEventListener('click', initGame);
         window.addEventListener('resize', cacheApplePositions);
-
-        window.onload = initGame;
     </script>
 </body>
 </html>
